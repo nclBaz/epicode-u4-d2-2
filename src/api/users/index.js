@@ -78,17 +78,60 @@ usersRouter.get("/", (request, response) => {
 
 // 3. READ (single user) --> GET http://localhost:3001/users/:userId
 usersRouter.get("/:userId", (request, response) => {
-  response.send({ message: "Hello I am the GET SINGLE USER ENDPOINT!" })
+  // 1. Obtain the user id from the URL
+  const userID = request.params.userId
+
+  // 2. Read the users.json file, obtaining an array
+  const usersArray = JSON.parse(fs.readFileSync(usersJSONPath))
+
+  // 3. Find the specific user by id in the array
+  const foundUser = usersArray.find(user => user.id === userID)
+
+  // 4. Send back a proper response
+
+  response.send(foundUser)
 })
 
 // 4. UPDATE (single user) --> PUT http://localhost:3001/users/:userId (+ body)
 usersRouter.put("/:userId", (request, response) => {
-  response.send({ message: "Hello I am the PUT ENDPOINT!" })
+  // 1. Read the file, obtaining an array
+  const usersArray = JSON.parse(fs.readFileSync(usersJSONPath))
+
+  // 2. Modify the specified user by merging previous properties with new properties coming from req.body
+
+  // 2.1 Find the index in the array of the speficied user
+  const index = usersArray.findIndex(user => user.id === request.params.userId)
+  const oldUser = usersArray[index]
+
+  // 2.2 Craft a modified user by merging previous properties with new properties coming from req.body
+  const updatedUser = { ...oldUser, ...request.body, updatedAt: new Date() }
+
+  // 2.3 Replace that index position with the modified user
+  usersArray[index] = updatedUser
+
+  // 3. Save the modified array back on disk
+  fs.writeFileSync(usersJSONPath, JSON.stringify(usersArray))
+
+  // 4. Send back a proper response
+  response.send(updatedUser)
 })
 
 // 5. DELETE (single user) --> DELETE http://localhost:3001/users/:userId
 usersRouter.delete("/:userId", (request, response) => {
-  response.send({ message: "Hello I am the DELETE ENDPOINT!" })
+  // 1. Read the file, obtaining an array
+  const usersArray = JSON.parse(fs.readFileSync(usersJSONPath))
+
+  // 2. Filter out the specified user from the array, keeping just the array of the remaining users
+  const remainingUsers = usersArray.filter(
+    user => user.id !== request.params.userId
+  )
+
+  // 3. Save the array of remaining users back on disk
+  fs.writeFileSync(usersJSONPath, JSON.stringify(remainingUsers))
+
+  // 4. Send back a proper response
+
+  response.status(204).send()
 })
 
 export default usersRouter // Please do not forget this!
